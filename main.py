@@ -699,7 +699,6 @@ class AppLauncher(QMainWindow):
         # Set up right-click context menu using mousePressEvent
         def mouse_press_event(event):
             if event.button() == Qt.RightButton:
-                print(f"Right click detected on {app_name}")  # Debug
                 self.show_context_menu(app_name, event.globalPos())
             else:
                 QPushButton.mousePressEvent(button, event)
@@ -713,14 +712,10 @@ class AppLauncher(QMainWindow):
 
     def show_context_menu(self, app_name, position):
         """Show context menu for app buttons"""
-        print(f"Context menu requested for: {app_name} at position: {position}")  # Debug
-        
         if app_name not in self.discovered_apps:
-            print(f"App {app_name} not found in discovered apps")  # Debug
             return
             
         app_info = self.discovered_apps[app_name]
-        print(f"Showing context menu for: {app_info['name']}")  # Debug
         
         # Get theme colors for menu styling
         theme = self.themes[self.current_theme]
@@ -756,12 +751,6 @@ class AppLauncher(QMainWindow):
         folder_action.triggered.connect(lambda: self.open_app_folder(app_name))
         menu.addAction(folder_action)
         
-        # Add a test action to verify menu works
-        test_action = QAction("🔧 Test Action", self)
-        test_action.triggered.connect(lambda: print(f"Test action clicked for {app_name}"))
-        menu.addAction(test_action)
-        
-        print("About to show context menu...")  # Debug
         # Show the menu
         menu.exec_(position)
     
