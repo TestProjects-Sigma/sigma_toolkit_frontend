@@ -39,8 +39,8 @@ class ReadmeDialog(QDialog):
         self.text_area.setReadOnly(True)
         self.text_area.setStyleSheet("""
             QTextEdit {
-                background-color: #ffffff;
-                border: 1px solid #dddddd;
+                background-color: #e8e8e8;
+                border: 1px solid #cccccc;
                 border-radius: 5px;
                 padding: 10px;
                 font-family: 'Consolas', 'Monaco', monospace;
@@ -347,20 +347,20 @@ class AppLauncher(QMainWindow):
         self.current_theme = "Light"
         self.settings = {}
         
-        # Theme definitions
+        # Theme definitions - Updated with light grey colors
         self.themes = {
             "Light": {
-                "main_bg": "#f5f5f5",
-                "content_bg": "#ffffff",
+                "main_bg": "#f0f0f0",        # Changed from "#f5f5f5" to light grey
+                "content_bg": "#e8e8e8",     # Changed from "#ffffff" to light grey
                 "text_color": "#333333",
                 "title_color": "#2c3e50",
-                "border_color": "#dddddd",
-                "button_bg": "#ffffff",
-                "button_hover": "#f0f8ff",
-                "button_pressed": "#e6f3ff",
-                "button_border": "#e9ecef",
-                "status_bg": "#ecf0f1",
-                "status_text": "#7f8c8d"
+                "border_color": "#cccccc",   # Slightly darker border for contrast
+                "button_bg": "#e8e8e8",      # Changed from "#ffffff" to light grey
+                "button_hover": "#d8d8d8",   # Changed from "#f0f8ff" to darker grey
+                "button_pressed": "#c8c8c8", # Changed from "#e6f3ff" to darker grey
+                "button_border": "#bbbbbb",  # Changed from "#e9ecef" to darker grey
+                "status_bg": "#d0d0d0",      # Changed from "#ecf0f1" to grey
+                "status_text": "#555555"     # Changed from "#7f8c8d" to darker text
             },
             "Dark": {
                 "main_bg": "#2b2b2b",
