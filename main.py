@@ -74,6 +74,7 @@ class ReadmeDialog(QDialog):
 class SettingsDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.parent_window = parent
         self.setWindowTitle("Settings")
         self.setModal(True)
         self.setFixedSize(500, 400)
@@ -99,12 +100,14 @@ class SettingsDialog(QDialog):
         self.theme_combo = QComboBox()
         self.theme_combo.addItems(["Light", "Dark"])
         self.theme_combo.setCurrentText(parent.current_theme if parent else "Light")
+        self.theme_combo.currentTextChanged.connect(self.on_theme_changed)  # Add this line
         form_layout.addRow("Theme:", self.theme_combo)
         
         layout.addLayout(form_layout)
         
         # External paths section
-        layout.addWidget(QLabel("External App Paths:"))
+        self.external_paths_label = QLabel("External App Paths:")
+        layout.addWidget(self.external_paths_label)
         
         self.external_paths_list = QListWidget()
         self.external_paths_list.setMaximumHeight(100)
@@ -116,32 +119,148 @@ class SettingsDialog(QDialog):
         # External path buttons
         path_buttons_layout = QHBoxLayout()
         
-        add_path_btn = QPushButton("➕ Add Path")
-        add_path_btn.clicked.connect(self.add_external_path)
-        path_buttons_layout.addWidget(add_path_btn)
+        self.add_path_btn = QPushButton("➕ Add Path")
+        self.add_path_btn.clicked.connect(self.add_external_path)
+        path_buttons_layout.addWidget(self.add_path_btn)
         
-        remove_path_btn = QPushButton("➖ Remove")
-        remove_path_btn.clicked.connect(self.remove_external_path)
-        path_buttons_layout.addWidget(remove_path_btn)
+        self.remove_path_btn = QPushButton("➖ Remove")
+        self.remove_path_btn.clicked.connect(self.remove_external_path)
+        path_buttons_layout.addWidget(self.remove_path_btn)
         
         path_buttons_layout.addStretch()
         layout.addLayout(path_buttons_layout)
         
         # App name customization
-        layout.addWidget(QLabel("Custom App Names:"))
+        self.app_names_label = QLabel("Custom App Names:")
+        layout.addWidget(self.app_names_label)
         
         self.app_names_layout = QVBoxLayout()
         layout.addLayout(self.app_names_layout)
         
         # Dialog buttons
-        button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        button_box.accepted.connect(self.accept)
-        button_box.rejected.connect(self.reject)
-        layout.addWidget(button_box)
+        self.button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        self.button_box.accepted.connect(self.accept)
+        self.button_box.rejected.connect(self.reject)
+        layout.addWidget(self.button_box)
         
         # Load current app names
         if parent:
             self.load_app_names(parent.discovered_apps, parent.settings.get('custom_names', {}))
+        
+        # Apply initial theme
+        self.apply_dialog_theme()
+    
+    def on_theme_changed(self, theme_name):
+        """Handle theme change in real time"""
+        if self.parent_window:
+            # Temporarily update parent theme for preview
+            old_theme = self.parent_window.current_theme
+            self.parent_window.current_theme = theme_name
+            self.apply_dialog_theme()
+            # Restore original theme (will be applied when OK is clicked)
+            self.parent_window.current_theme = old_theme
+    
+    def apply_dialog_theme(self):
+        """Apply theme styling to the settings dialog"""
+        if not self.parent_window:
+            return
+            
+        theme = self.parent_window.themes[self.theme_combo.currentText()]
+        
+        # Main dialog styling
+        self.setStyleSheet(f"""
+            QDialog {{
+                background-color: {theme['main_bg']};
+                color: {theme['text_color']};
+            }}
+            QLabel {{
+                color: {theme['text_color']};
+                font-weight: bold;
+                margin: 5px 0px;
+            }}
+            QSpinBox {{
+                background-color: {theme['content_bg']};
+                border: 1px solid {theme['border_color']};
+                border-radius: 4px;
+                padding: 5px;
+                color: {theme['text_color']};
+                min-height: 20px;
+            }}
+            QSpinBox:focus {{
+                border-color: {theme['title_color']};
+            }}
+            QComboBox {{
+                background-color: {theme['content_bg']};
+                border: 1px solid {theme['border_color']};
+                border-radius: 4px;
+                padding: 5px;
+                color: {theme['text_color']};
+                min-height: 20px;
+            }}
+            QComboBox:focus {{
+                border-color: {theme['title_color']};
+            }}
+            QComboBox::drop-down {{
+                border: none;
+                background-color: {theme['button_bg']};
+            }}
+            QComboBox::down-arrow {{
+                border: 2px solid {theme['text_color']};
+                border-top: none;
+                border-right: none;
+                width: 6px;
+                height: 6px;
+                margin-right: 5px;
+            }}
+            QComboBox QAbstractItemView {{
+                background-color: {theme['content_bg']};
+                border: 1px solid {theme['border_color']};
+                color: {theme['text_color']};
+                selection-background-color: {theme['button_hover']};
+            }}
+            QListWidget {{
+                background-color: {theme['content_bg']};
+                border: 1px solid {theme['border_color']};
+                border-radius: 4px;
+                color: {theme['text_color']};
+                padding: 5px;
+            }}
+            QListWidget::item {{
+                padding: 3px;
+                border-radius: 2px;
+            }}
+            QListWidget::item:selected {{
+                background-color: {theme['button_hover']};
+                color: {theme['title_color']};
+            }}
+            QLineEdit {{
+                background-color: {theme['content_bg']};
+                border: 1px solid {theme['border_color']};
+                border-radius: 4px;
+                padding: 5px;
+                color: {theme['text_color']};
+                min-height: 20px;
+            }}
+            QLineEdit:focus {{
+                border-color: {theme['title_color']};
+            }}
+            QPushButton {{
+                background-color: {theme['button_bg']};
+                color: {theme['text_color']};
+                border: 1px solid {theme['button_border']};
+                border-radius: 4px;
+                padding: 8px 16px;
+                font-weight: bold;
+                min-height: 20px;
+            }}
+            QPushButton:hover {{
+                background-color: {theme['button_hover']};
+                border-color: {theme['title_color']};
+            }}
+            QPushButton:pressed {{
+                background-color: {theme['button_pressed']};
+            }}
+        """)
     
     def add_external_path(self):
         """Add an external app path"""
@@ -335,18 +454,57 @@ class AppLauncher(QMainWindow):
         """Apply the current theme to the interface"""
         theme = self.themes[self.current_theme]
         
-        # Main window styling
+        # Main window styling - more comprehensive
         self.setStyleSheet(f"""
             QMainWindow {{
                 background-color: {theme['main_bg']};
+                color: {theme['text_color']};
+            }}
+            QWidget {{
+                background-color: {theme['main_bg']};
+                color: {theme['text_color']};
             }}
             QLabel {{
                 color: {theme['text_color']};
+                background-color: transparent;
+            }}
+            QScrollArea {{
+                background-color: {theme['content_bg']};
+                border: 1px solid {theme['border_color']};
+                border-radius: 8px;
+            }}
+            QScrollArea > QWidget > QWidget {{
+                background-color: {theme['content_bg']};
+            }}
+            QScrollBar:vertical {{
+                background-color: {theme['content_bg']};
+                border: 1px solid {theme['border_color']};
+                border-radius: 4px;
+                width: 12px;
+            }}
+            QScrollBar::handle:vertical {{
+                background-color: {theme['button_bg']};
+                border-radius: 4px;
+                min-height: 20px;
+            }}
+            QScrollBar::handle:vertical:hover {{
+                background-color: {theme['button_hover']};
+            }}
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
+                border: none;
+                background: none;
             }}
         """)
         
         # Title styling
-        self.title_label.setStyleSheet(f"color: {theme['title_color']}; margin-bottom: 10px;")
+        self.title_label.setStyleSheet(f"""
+            QLabel {{
+                color: {theme['title_color']}; 
+                margin-bottom: 10px;
+                background-color: transparent;
+                font-weight: bold;
+            }}
+        """)
         
         # Header button styling
         header_button_style = f"""
@@ -361,6 +519,8 @@ class AppLauncher(QMainWindow):
             }}
             QPushButton:hover {{
                 background-color: {theme['button_hover']};
+                border-color: {theme['title_color']};
+                color: {theme['title_color']};
             }}
             QPushButton:pressed {{
                 background-color: {theme['button_pressed']};
@@ -371,14 +531,10 @@ class AppLauncher(QMainWindow):
         self.refresh_btn.setStyleSheet(header_button_style)
         
         # Separator styling
-        self.separator.setStyleSheet(f"color: {theme['border_color']};")
-        
-        # Scroll area styling
-        self.scroll_area.setStyleSheet(f"""
-            QScrollArea {{
-                background-color: {theme['content_bg']};
-                border: 1px solid {theme['border_color']};
-                border-radius: 8px;
+        self.separator.setStyleSheet(f"""
+            QFrame {{
+                color: {theme['border_color']};
+                background-color: {theme['border_color']};
             }}
         """)
         
@@ -389,6 +545,14 @@ class AppLauncher(QMainWindow):
                 padding: 8px;
                 border-radius: 4px;
                 color: {theme['status_text']};
+                border: 1px solid {theme['border_color']};
+            }}
+        """)
+        
+        # Apps container styling
+        self.apps_container.setStyleSheet(f"""
+            QWidget {{
+                background-color: {theme['content_bg']};
             }}
         """)
 
@@ -699,6 +863,7 @@ class AppLauncher(QMainWindow):
         # Set up right-click context menu using mousePressEvent
         def mouse_press_event(event):
             if event.button() == Qt.RightButton:
+                print(f"Right click detected on {app_name}")  # Debug
                 self.show_context_menu(app_name, event.globalPos())
             else:
                 QPushButton.mousePressEvent(button, event)
@@ -712,10 +877,14 @@ class AppLauncher(QMainWindow):
 
     def show_context_menu(self, app_name, position):
         """Show context menu for app buttons"""
+        print(f"Context menu requested for: {app_name} at position: {position}")  # Debug
+        
         if app_name not in self.discovered_apps:
+            print(f"App {app_name} not found in discovered apps")  # Debug
             return
             
         app_info = self.discovered_apps[app_name]
+        print(f"Showing context menu for: {app_info['name']}")  # Debug
         
         # Get theme colors for menu styling
         theme = self.themes[self.current_theme]
@@ -751,6 +920,12 @@ class AppLauncher(QMainWindow):
         folder_action.triggered.connect(lambda: self.open_app_folder(app_name))
         menu.addAction(folder_action)
         
+        # Add a test action to verify menu works
+        test_action = QAction("🔧 Test Action", self)
+        test_action.triggered.connect(lambda: print(f"Test action clicked for {app_name}"))
+        menu.addAction(test_action)
+        
+        print("About to show context menu...")  # Debug
         # Show the menu
         menu.exec_(position)
     
@@ -809,18 +984,32 @@ class AppLauncher(QMainWindow):
         if dialog.exec_() == QDialog.Accepted:
             new_settings = dialog.get_settings()
             self.settings.update(new_settings)
+            
+            # Store old values for comparison
+            old_theme = self.current_theme
+            old_columns = self.grid_columns
+            old_button_size = self.button_size
+            
+            # Update settings
             self.grid_columns = new_settings['grid_columns']
             self.button_size = new_settings['button_size']
-            
-            # Handle theme change
-            old_theme = self.current_theme
             self.current_theme = new_settings['theme']
+            
+            # Apply theme if changed
             if old_theme != self.current_theme:
                 self.apply_theme()
+                # Update all existing buttons with new theme
+                self.update_ui()
+            elif old_columns != self.grid_columns or old_button_size != self.button_size:
+                # Only update UI if layout changed
+                self.update_ui()
             
             self.save_settings()
             self.refresh_apps()  # Refresh to include external paths
             self.status_label.setText("Settings updated")
+        else:
+            # If dialog was cancelled, make sure we restore the original theme
+            self.apply_theme()
             
     def launch_app(self, app_name):
         """Launch a Python application"""
