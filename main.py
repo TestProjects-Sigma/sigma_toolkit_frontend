@@ -14,151 +14,9 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                              QMessageBox, QGridLayout, QFrame, QDialog, QLineEdit,
                              QDialogButtonBox, QFormLayout, QSpinBox, QComboBox,
                              QTextEdit, QMenu, QAction, QFileDialog, QListWidget,
-                             QListWidgetItem, QCheckBox, QGraphicsDropShadowEffect)
-from PyQt5.QtCore import Qt, QFileSystemWatcher, QTimer, QPropertyAnimation, QEasingCurve, pyqtProperty
-from PyQt5.QtGui import QFont, QIcon, QPainter, QPainterPath, QLinearGradient, QColor, QPen
-
-
-class AnimatedButton(QPushButton):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._animation = QPropertyAnimation(self, b"geometry")
-        self._animation.setDuration(200)
-        self._animation.setEasingCurve(QEasingCurve.OutCubic)
-        
-    def enterEvent(self, event):
-        super().enterEvent(event)
-        # Add subtle scale animation on hover
-        
-    def leaveEvent(self, event):
-        super().leaveEvent(event)
-
-
-class NetworkToolCard(QPushButton):
-    def __init__(self, app_name, app_info, theme, button_size):
-        super().__init__()
-        self.app_name = app_name
-        self.app_info = app_info
-        self.theme = theme
-        
-        # Determine tool category and icon
-        self.category, self.icon = self.categorize_tool(app_name, app_info)
-        
-        # Set up the card
-        self.setup_card(button_size)
-        
-    def categorize_tool(self, app_name, app_info):
-        """Categorize the tool based on name and assign appropriate icon"""
-        name_lower = app_name.lower()
-        
-        categories = {
-            'scanner': ('🔍', ['scan', 'nmap', 'port', 'discover', 'probe']),
-            'monitor': ('📊', ['monitor', 'watch', 'status', 'health', 'ping']),
-            'analyzer': ('📈', ['analyze', 'packet', 'traffic', 'wireshark', 'tcpdump']),
-            'security': ('🔒', ['security', 'audit', 'vuln', 'password', 'auth']),
-            'config': ('⚙️', ['config', 'setup', 'manage', 'admin']),
-            'backup': ('💾', ['backup', 'restore', 'archive', 'sync']),
-            'vpn': ('🔐', ['vpn', 'tunnel', 'proxy', 'gateway']),
-            'dns': ('🌐', ['dns', 'domain', 'resolve', 'lookup']),
-            'firewall': ('🛡️', ['firewall', 'fw', 'iptables', 'filter']),
-            'wireless': ('📡', ['wifi', 'wireless', 'wlan', 'ap']),
-            'automation': ('🤖', ['auto', 'script', 'deploy', 'ansible']),
-            'reporting': ('📋', ['report', 'log', 'audit', 'compliance'])
-        }
-        
-        for category, (icon, keywords) in categories.items():
-            if any(keyword in name_lower for keyword in keywords):
-                return category.title(), icon
-                
-        # Default for networking tools
-        return 'Network Tool', '🔧'
-    
-    def setup_card(self, button_size):
-        """Set up the visual card design"""
-        # Card dimensions
-        size_map = {
-            "Small": (180, 100),
-            "Medium": (220, 120),
-            "Large": (260, 140)
-        }
-        width, height = size_map.get(button_size, (220, 120))
-        self.setFixedSize(width, height)
-        
-        # Get display name
-        display_name = self.app_info.get('display_name', self.app_info['name'])
-        display_name = display_name.replace('_', ' ').title()
-        
-        # Status indicators
-        has_requirements = self.app_info['requirements'].exists()
-        has_readme = self.app_info['readme'].exists()
-        is_external = self.app_info['source'] == 'external'
-        
-        # Create card styling with modern design
-        card_style = f"""
-            QPushButton {{
-                background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
-                    stop: 0 {self.theme['button_bg']}, 
-                    stop: 0.5 {self.theme['content_bg']},
-                    stop: 1 {self.theme['button_bg']});
-                border: 2px solid {self.theme['button_border']};
-                border-radius: 12px;
-                font-size: 11px;
-                font-weight: bold;
-                color: {self.theme['text_color']};
-                text-align: left;
-                padding: 12px;
-                margin: 2px;
-            }}
-            QPushButton:hover {{
-                background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
-                    stop: 0 {self.theme['button_hover']}, 
-                    stop: 0.5 {self.theme['title_color']},
-                    stop: 1 {self.theme['button_hover']});
-                border-color: {self.theme['title_color']};
-                color: white;
-                transform: translateY(-2px);
-            }}
-            QPushButton:pressed {{
-                background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
-                    stop: 0 {self.theme['button_pressed']}, 
-                    stop: 1 {self.theme['button_hover']});
-                transform: translateY(1px);
-            }}
-        """
-        self.setStyleSheet(card_style)
-        
-        # Create card content with better layout
-        status_line = ""
-        if has_requirements:
-            status_line += "📦 "
-        if has_readme:
-            status_line += "📖 "
-        if is_external:
-            status_line += "🔗"
-            
-        # Multi-line text with icon, name, category, and status
-        card_text = f"{self.icon}  {display_name}\n{self.category}\n{status_line}"
-        self.setText(card_text)
-        
-        # Add shadow effect for depth
-        shadow = QGraphicsDropShadowEffect()
-        shadow.setBlurRadius(8)
-        shadow.setColor(QColor(0, 0, 0, 60))
-        shadow.setOffset(2, 2)
-        self.setGraphicsEffect(shadow)
-        
-        # Tooltip with detailed info
-        tooltip_text = f"""
-        <b>{display_name}</b><br>
-        Category: {self.category}<br>
-        Type: {'External' if is_external else 'Local'}<br>
-        Dependencies: {'Yes' if has_requirements else 'No'}<br>
-        Documentation: {'Yes' if has_readme else 'No'}<br>
-        <br>
-        <i>Left click: Launch tool<br>
-        Right click: View options</i>
-        """
-        self.setToolTip(tooltip_text)
+                             QListWidgetItem, QCheckBox)
+from PyQt5.QtCore import Qt, QFileSystemWatcher, QTimer
+from PyQt5.QtGui import QFont, QIcon
 
 
 class ReadmeDialog(QDialog):
@@ -217,9 +75,9 @@ class SettingsDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.parent_window = parent
-        self.setWindowTitle("⚙️ Network Tools Settings")
+        self.setWindowTitle("Settings")
         self.setModal(True)
-        self.setFixedSize(520, 420)
+        self.setFixedSize(500, 400)
         
         layout = QVBoxLayout(self)
         
@@ -236,19 +94,19 @@ class SettingsDialog(QDialog):
         self.button_size_combo = QComboBox()
         self.button_size_combo.addItems(["Small", "Medium", "Large"])
         self.button_size_combo.setCurrentText(parent.button_size if parent else "Medium")
-        form_layout.addRow("Card Size:", self.button_size_combo)
+        form_layout.addRow("Button Size:", self.button_size_combo)
         
         # Theme setting
         self.theme_combo = QComboBox()
         self.theme_combo.addItems(["Light", "Dark"])
         self.theme_combo.setCurrentText(parent.current_theme if parent else "Light")
-        self.theme_combo.currentTextChanged.connect(self.on_theme_changed)
+        self.theme_combo.currentTextChanged.connect(self.on_theme_changed)  # Add this line
         form_layout.addRow("Theme:", self.theme_combo)
         
         layout.addLayout(form_layout)
         
         # External paths section
-        self.external_paths_label = QLabel("External Tool Paths:")
+        self.external_paths_label = QLabel("External App Paths:")
         layout.addWidget(self.external_paths_label)
         
         self.external_paths_list = QListWidget()
@@ -261,7 +119,7 @@ class SettingsDialog(QDialog):
         # External path buttons
         path_buttons_layout = QHBoxLayout()
         
-        self.add_path_btn = QPushButton("➕ Add Tool Path")
+        self.add_path_btn = QPushButton("➕ Add Path")
         self.add_path_btn.clicked.connect(self.add_external_path)
         path_buttons_layout.addWidget(self.add_path_btn)
         
@@ -273,7 +131,7 @@ class SettingsDialog(QDialog):
         layout.addLayout(path_buttons_layout)
         
         # App name customization
-        self.app_names_label = QLabel("Custom Tool Names:")
+        self.app_names_label = QLabel("Custom App Names:")
         layout.addWidget(self.app_names_label)
         
         self.app_names_layout = QVBoxLayout()
@@ -309,11 +167,10 @@ class SettingsDialog(QDialog):
             
         theme = self.parent_window.themes[self.theme_combo.currentText()]
         
-        # Main dialog styling with enhanced design
+        # Main dialog styling
         self.setStyleSheet(f"""
             QDialog {{
-                background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                    stop: 0 {theme['main_bg']}, stop: 1 {theme['content_bg']});
+                background-color: {theme['main_bg']};
                 color: {theme['text_color']};
             }}
             QLabel {{
@@ -323,9 +180,9 @@ class SettingsDialog(QDialog):
             }}
             QSpinBox {{
                 background-color: {theme['content_bg']};
-                border: 2px solid {theme['border_color']};
-                border-radius: 6px;
-                padding: 8px;
+                border: 1px solid {theme['border_color']};
+                border-radius: 4px;
+                padding: 5px;
                 color: {theme['text_color']};
                 min-height: 20px;
             }}
@@ -334,9 +191,9 @@ class SettingsDialog(QDialog):
             }}
             QComboBox {{
                 background-color: {theme['content_bg']};
-                border: 2px solid {theme['border_color']};
-                border-radius: 6px;
-                padding: 8px;
+                border: 1px solid {theme['border_color']};
+                border-radius: 4px;
+                padding: 5px;
                 color: {theme['text_color']};
                 min-height: 20px;
             }}
@@ -346,7 +203,6 @@ class SettingsDialog(QDialog):
             QComboBox::drop-down {{
                 border: none;
                 background-color: {theme['button_bg']};
-                border-radius: 4px;
             }}
             QComboBox::down-arrow {{
                 border: 2px solid {theme['text_color']};
@@ -364,15 +220,14 @@ class SettingsDialog(QDialog):
             }}
             QListWidget {{
                 background-color: {theme['content_bg']};
-                border: 2px solid {theme['border_color']};
-                border-radius: 6px;
+                border: 1px solid {theme['border_color']};
+                border-radius: 4px;
                 color: {theme['text_color']};
                 padding: 5px;
             }}
             QListWidget::item {{
-                padding: 5px;
-                border-radius: 3px;
-                margin: 1px;
+                padding: 3px;
+                border-radius: 2px;
             }}
             QListWidget::item:selected {{
                 background-color: {theme['button_hover']};
@@ -380,9 +235,9 @@ class SettingsDialog(QDialog):
             }}
             QLineEdit {{
                 background-color: {theme['content_bg']};
-                border: 2px solid {theme['border_color']};
-                border-radius: 6px;
-                padding: 8px;
+                border: 1px solid {theme['border_color']};
+                border-radius: 4px;
+                padding: 5px;
                 color: {theme['text_color']};
                 min-height: 20px;
             }}
@@ -390,20 +245,17 @@ class SettingsDialog(QDialog):
                 border-color: {theme['title_color']};
             }}
             QPushButton {{
-                background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                    stop: 0 {theme['button_bg']}, stop: 1 {theme['content_bg']});
+                background-color: {theme['button_bg']};
                 color: {theme['text_color']};
-                border: 2px solid {theme['button_border']};
-                border-radius: 6px;
-                padding: 10px 16px;
+                border: 1px solid {theme['button_border']};
+                border-radius: 4px;
+                padding: 8px 16px;
                 font-weight: bold;
                 min-height: 20px;
             }}
             QPushButton:hover {{
-                background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                    stop: 0 {theme['button_hover']}, stop: 1 {theme['button_bg']});
+                background-color: {theme['button_hover']};
                 border-color: {theme['title_color']};
-                color: {theme['title_color']};
             }}
             QPushButton:pressed {{
                 background-color: {theme['button_pressed']};
@@ -412,14 +264,14 @@ class SettingsDialog(QDialog):
     
     def add_external_path(self):
         """Add an external app path"""
-        folder = QFileDialog.getExistingDirectory(self, "Select Network Tool Folder")
+        folder = QFileDialog.getExistingDirectory(self, "Select App Folder")
         if folder:
             # Check if it contains main.py
             main_py = Path(folder) / "main.py"
             if main_py.exists():
                 self.external_paths_list.addItem(folder)
             else:
-                QMessageBox.warning(self, "Invalid Tool", 
+                QMessageBox.warning(self, "Invalid App", 
                                   "Selected folder must contain a main.py file.")
     
     def remove_external_path(self):
@@ -495,37 +347,33 @@ class AppLauncher(QMainWindow):
         self.current_theme = "Light"
         self.settings = {}
         
-        # Enhanced theme definitions for network tools
+        # Theme definitions
         self.themes = {
             "Light": {
-                "main_bg": "#f8fafc",
+                "main_bg": "#f5f5f5",
                 "content_bg": "#ffffff",
-                "text_color": "#1e293b",
-                "title_color": "#0f172a",
-                "accent_color": "#3b82f6",
-                "border_color": "#e2e8f0",
+                "text_color": "#333333",
+                "title_color": "#2c3e50",
+                "border_color": "#dddddd",
                 "button_bg": "#ffffff",
-                "button_hover": "#f1f5f9",
-                "button_pressed": "#e2e8f0",
-                "button_border": "#cbd5e1",
-                "status_bg": "#f1f5f9",
-                "status_text": "#64748b",
-                "header_bg": "qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0, stop: 0 #3b82f6, stop: 1 #1d4ed8)"
+                "button_hover": "#f0f8ff",
+                "button_pressed": "#e6f3ff",
+                "button_border": "#e9ecef",
+                "status_bg": "#ecf0f1",
+                "status_text": "#7f8c8d"
             },
             "Dark": {
-                "main_bg": "#0f172a",
-                "content_bg": "#1e293b",
-                "text_color": "#f1f5f9",
-                "title_color": "#60a5fa",
-                "accent_color": "#3b82f6",
-                "border_color": "#334155",
-                "button_bg": "#374151",
-                "button_hover": "#4b5563",
-                "button_pressed": "#6b7280",
-                "button_border": "#4b5563",
-                "status_bg": "#374151",
-                "status_text": "#9ca3af",
-                "header_bg": "qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0, stop: 0 #1e40af, stop: 1 #3730a3)"
+                "main_bg": "#2b2b2b",
+                "content_bg": "#3c3c3c",
+                "text_color": "#ffffff",
+                "title_color": "#61dafb",
+                "border_color": "#555555",
+                "button_bg": "#404040",
+                "button_hover": "#4a4a4a",
+                "button_pressed": "#555555",
+                "button_border": "#606060",
+                "status_bg": "#484848",
+                "status_text": "#cccccc"
             }
         }
         
@@ -545,9 +393,9 @@ class AppLauncher(QMainWindow):
         self.scan_apps()
         
     def init_ui(self):
-        """Initialize the user interface with enhanced design"""
-        self.setWindowTitle("🔧 Sigma's Network Toolkit Launcher")
-        self.setGeometry(100, 100, 1200, 800)
+        """Initialize the user interface"""
+        self.setWindowTitle("Sigma's Toolkit Launcher")
+        self.setGeometry(100, 100, 1000, 700)
         
         # Central widget
         central_widget = QWidget()
@@ -555,65 +403,35 @@ class AppLauncher(QMainWindow):
         
         # Main layout
         main_layout = QVBoxLayout(central_widget)
-        main_layout.setSpacing(0)
-        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(15)
+        main_layout.setContentsMargins(20, 20, 20, 20)
         
-        # Enhanced Header with gradient background
-        header_widget = QWidget()
-        header_widget.setFixedHeight(140)
-        header_layout = QVBoxLayout(header_widget)
-        header_layout.setContentsMargins(30, 15, 30, 15)
-        header_layout.setSpacing(8)
+        # Header
+        header_layout = QHBoxLayout()
+        self.title_label = QLabel("🔧 Sigma's Toolkit Launcher")
+        self.title_label.setFont(QFont("Arial", 18, QFont.Bold))
+        header_layout.addWidget(self.title_label)
         
-        # Title and subtitle
-        title_layout = QHBoxLayout()
+        header_layout.addStretch()
         
-        # Logo and title section
-        logo_title_layout = QVBoxLayout()
-        
-        self.title_label = QLabel("🔧 Sigma's Network Toolkit Launcher")
-        self.title_label.setFont(QFont("Arial", 20, QFont.Bold))
-        logo_title_layout.addWidget(self.title_label)
-        
-        self.subtitle_label = QLabel("Professional Network Administration & Security Tools")
-        self.subtitle_label.setFont(QFont("Arial", 11))
-        logo_title_layout.addWidget(self.subtitle_label)
-        
-        title_layout.addLayout(logo_title_layout)
-        title_layout.addStretch()
-        
-        # Header buttons with better styling
-        buttons_layout = QHBoxLayout()
-        
+        # Header buttons
         self.settings_btn = QPushButton("⚙️ Settings")
-        self.settings_btn.setFont(QFont("Arial", 9, QFont.Bold))
-        self.settings_btn.setFixedSize(120, 40)
         self.settings_btn.clicked.connect(self.open_settings)
-        buttons_layout.addWidget(self.settings_btn)
+        header_layout.addWidget(self.settings_btn)
         
         self.refresh_btn = QPushButton("🔄 Refresh")
-        self.refresh_btn.setFont(QFont("Arial", 9, QFont.Bold))
-        self.refresh_btn.setFixedSize(120, 40)
         self.refresh_btn.clicked.connect(self.refresh_apps)
-        buttons_layout.addWidget(self.refresh_btn)
+        header_layout.addWidget(self.refresh_btn)
         
-        title_layout.addLayout(buttons_layout)
-        header_layout.addLayout(title_layout)
+        main_layout.addLayout(header_layout)
         
-        # Stats section
-        self.stats_label = QLabel("Loading network tools...")
-        self.stats_label.setFont(QFont("Arial", 9))
-        self.stats_label.setMinimumHeight(20)
-        header_layout.addWidget(self.stats_label)
+        # Separator
+        self.separator = QFrame()
+        self.separator.setFrameShape(QFrame.HLine)
+        self.separator.setFrameShadow(QFrame.Sunken)
+        main_layout.addWidget(self.separator)
         
-        main_layout.addWidget(header_widget)
-        
-        # Content area with better spacing
-        content_widget = QWidget()
-        content_layout = QVBoxLayout(content_widget)
-        content_layout.setContentsMargins(20, 20, 20, 20)
-        
-        # Scroll area for apps with enhanced design
+        # Scroll area for apps
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
@@ -622,129 +440,55 @@ class AppLauncher(QMainWindow):
         # Apps container
         self.apps_container = QWidget()
         self.apps_layout = QGridLayout(self.apps_container)
-        self.apps_layout.setSpacing(20)
+        self.apps_layout.setSpacing(15)
         self.apps_layout.setContentsMargins(20, 20, 20, 20)
         
         self.scroll_area.setWidget(self.apps_container)
-        content_layout.addWidget(self.scroll_area)
+        main_layout.addWidget(self.scroll_area)
         
-        main_layout.addWidget(content_widget)
-        
-        # Enhanced status bar
-        status_widget = QWidget()
-        status_widget.setFixedHeight(50)
-        status_layout = QHBoxLayout(status_widget)
-        status_layout.setContentsMargins(30, 10, 30, 10)
-        
-        self.status_label = QLabel("🚀 Ready to launch network tools")
-        self.status_label.setFont(QFont("Arial", 10))
-        status_layout.addWidget(self.status_label)
-        
-        status_layout.addStretch()
-        
-        # Version info
-        version_label = QLabel("Sigma's Toolkit v2.0")
-        version_label.setFont(QFont("Arial", 9))
-        status_layout.addWidget(version_label)
-        
-        main_layout.addWidget(status_widget)
+        # Status bar
+        self.status_label = QLabel("Ready")
+        main_layout.addWidget(self.status_label)
     
     def apply_theme(self):
-        """Apply enhanced theme with network-focused design"""
+        """Apply the current theme to the interface"""
         theme = self.themes[self.current_theme]
         
-        # Main window styling
+        # Main window styling - more comprehensive
         self.setStyleSheet(f"""
             QMainWindow {{
-                background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                    stop: 0 {theme['main_bg']}, stop: 1 {theme['content_bg']});
+                background-color: {theme['main_bg']};
                 color: {theme['text_color']};
             }}
             QWidget {{
-                background-color: transparent;
+                background-color: {theme['main_bg']};
                 color: {theme['text_color']};
             }}
-        """)
-        
-        # Header styling with gradient
-        header_widget = self.findChild(QWidget)
-        if header_widget:
-            header_widget.setStyleSheet(f"""
-                QWidget {{
-                    background: {theme['header_bg']};
-                    border-radius: 0px;
-                }}
-            """)
-        
-        # Title and subtitle styling
-        self.title_label.setStyleSheet(f"""
             QLabel {{
-                color: white;
-                background-color: transparent;
-                font-weight: bold;
-            }}
-        """)
-        
-        self.subtitle_label.setStyleSheet(f"""
-            QLabel {{
-                color: rgba(255, 255, 255, 180);
-                background-color: transparent;
-                font-style: italic;
-            }}
-        """)
-        
-        # Stats label styling
-        self.stats_label.setStyleSheet(f"""
-            QLabel {{
-                color: rgba(255, 255, 255, 160);
+                color: {theme['text_color']};
                 background-color: transparent;
             }}
-        """)
-        
-        # Header button styling
-        header_button_style = f"""
-            QPushButton {{
-                background-color: rgba(255, 255, 255, 20);
-                color: white;
-                border: 2px solid rgba(255, 255, 255, 40);
-                border-radius: 6px;
-                padding: 8px 20px;
-                font-weight: bold;
-                min-width: 100px;
-            }}
-            QPushButton:hover {{
-                background-color: rgba(255, 255, 255, 30);
-                border-color: rgba(255, 255, 255, 60);
-            }}
-            QPushButton:pressed {{
-                background-color: rgba(255, 255, 255, 40);
-            }}
-        """
-        
-        self.settings_btn.setStyleSheet(header_button_style)
-        self.refresh_btn.setStyleSheet(header_button_style)
-        
-        # Scroll area styling
-        self.scroll_area.setStyleSheet(f"""
             QScrollArea {{
                 background-color: {theme['content_bg']};
-                border: 2px solid {theme['border_color']};
-                border-radius: 12px;
+                border: 1px solid {theme['border_color']};
+                border-radius: 8px;
+            }}
+            QScrollArea > QWidget > QWidget {{
+                background-color: {theme['content_bg']};
             }}
             QScrollBar:vertical {{
                 background-color: {theme['content_bg']};
                 border: 1px solid {theme['border_color']};
-                border-radius: 6px;
-                width: 14px;
+                border-radius: 4px;
+                width: 12px;
             }}
             QScrollBar::handle:vertical {{
-                background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0,
-                    stop: 0 {theme['accent_color']}, stop: 1 {theme['button_hover']});
-                border-radius: 6px;
-                min-height: 30px;
+                background-color: {theme['button_bg']};
+                border-radius: 4px;
+                min-height: 20px;
             }}
             QScrollBar::handle:vertical:hover {{
-                background-color: {theme['accent_color']};
+                background-color: {theme['button_hover']};
             }}
             QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
                 border: none;
@@ -752,22 +496,56 @@ class AppLauncher(QMainWindow):
             }}
         """)
         
-        # Status area styling
-        status_widget = self.centralWidget().layout().itemAt(2).widget()
-        if status_widget:
-            status_widget.setStyleSheet(f"""
-                QWidget {{
-                    background-color: {theme['status_bg']};
-                    border-top: 1px solid {theme['border_color']};
-                }}
-            """)
+        # Title styling
+        self.title_label.setStyleSheet(f"""
+            QLabel {{
+                color: {theme['title_color']}; 
+                margin-bottom: 10px;
+                background-color: transparent;
+                font-weight: bold;
+            }}
+        """)
+        
+        # Header button styling
+        header_button_style = f"""
+            QPushButton {{
+                background-color: {theme['button_bg']};
+                color: {theme['text_color']};
+                border: 1px solid {theme['button_border']};
+                border-radius: 6px;
+                padding: 10px 20px;
+                font-size: 12px;
+                font-weight: bold;
+            }}
+            QPushButton:hover {{
+                background-color: {theme['button_hover']};
+                border-color: {theme['title_color']};
+                color: {theme['title_color']};
+            }}
+            QPushButton:pressed {{
+                background-color: {theme['button_pressed']};
+            }}
+        """
+        
+        self.settings_btn.setStyleSheet(header_button_style)
+        self.refresh_btn.setStyleSheet(header_button_style)
+        
+        # Separator styling
+        self.separator.setStyleSheet(f"""
+            QFrame {{
+                color: {theme['border_color']};
+                background-color: {theme['border_color']};
+            }}
+        """)
         
         # Status label styling
         self.status_label.setStyleSheet(f"""
             QLabel {{
+                background-color: {theme['status_bg']};
+                padding: 8px;
+                border-radius: 4px;
                 color: {theme['status_text']};
-                background-color: transparent;
-                font-weight: bold;
+                border: 1px solid {theme['border_color']};
             }}
         """)
         
@@ -899,7 +677,7 @@ class AppLauncher(QMainWindow):
             
             # Show what we're skipping
             if skipped_packages:
-                skip_msg = f"⚠️ Skipped protected packages: {', '.join(skipped_packages)}"
+                skip_msg = f"Skipped protected packages: {', '.join(skipped_packages)}"
                 self.status_label.setText(skip_msg)
                 QApplication.processEvents()
             
@@ -925,7 +703,7 @@ class AppLauncher(QMainWindow):
                 }
                 self.save_requirements_cache()
                 
-                message = "✅ Requirements installed successfully"
+                message = "Requirements installed successfully"
                 if skipped_packages:
                     message += f" (skipped {len(skipped_packages)} protected packages)"
                 
@@ -951,14 +729,7 @@ class AppLauncher(QMainWindow):
                 self._scan_single_app(path_obj, "external")
                 
         self.update_ui()
-        
-        # Update stats display
-        total_tools = len(self.discovered_apps)
-        local_tools = sum(1 for app in self.discovered_apps.values() if app['source'] == 'local')
-        external_tools = total_tools - local_tools
-        
-        self.stats_label.setText(f"📊 {total_tools} network tools available • {local_tools} local • {external_tools} external")
-        self.status_label.setText(f"🔍 Discovered {total_tools} network administration tools")
+        self.status_label.setText(f"Found {len(self.discovered_apps)} apps")
     
     def _scan_folder(self, folder_path, source_type):
         """Scan a folder for apps"""
@@ -988,7 +759,7 @@ class AppLauncher(QMainWindow):
         self.discovered_apps[app_key] = app_info
 
     def update_ui(self):
-        """Update the UI with discovered apps using enhanced card design"""
+        """Update the UI with discovered apps"""
         # Clear existing buttons
         for button in self.app_buttons.values():
             button.deleteLater()
@@ -999,26 +770,12 @@ class AppLauncher(QMainWindow):
         total_apps = len(app_items)
         
         if total_apps == 0:
-            # Show empty state
-            empty_label = QLabel("🔧 No network tools found\n\nAdd your Python network tools to the 'apps' folder\nor configure external tool paths in Settings")
-            empty_label.setAlignment(Qt.AlignCenter)
-            empty_label.setStyleSheet(f"""
-                QLabel {{
-                    color: {self.themes[self.current_theme]['status_text']};
-                    font-size: 14px;
-                    padding: 40px;
-                    background-color: {self.themes[self.current_theme]['status_bg']};
-                    border: 2px dashed {self.themes[self.current_theme]['border_color']};
-                    border-radius: 12px;
-                }}
-            """)
-            self.apps_layout.addWidget(empty_label, 0, 0, 1, self.grid_columns)
             return
             
         # Calculate rows per column
         apps_per_column = (total_apps + self.grid_columns - 1) // self.grid_columns
         
-        # Create enhanced network tool cards
+        # Create buttons and place them column by column
         for i, (app_name, app_info) in enumerate(app_items):
             col = i // apps_per_column
             row = i % apps_per_column
@@ -1028,99 +785,152 @@ class AppLauncher(QMainWindow):
                 col = self.grid_columns - 1
                 row = i - (col * apps_per_column)
             
-            # Create enhanced network tool card
-            app_card = NetworkToolCard(app_name, app_info, self.themes[self.current_theme], self.button_size)
-            
-            # Connect events
-            app_card.clicked.connect(lambda checked, name=app_name: self.launch_app(name))
-            
-            # Set up right-click context menu
-            def mouse_press_event(event, app_name=app_name):
-                if event.button() == Qt.RightButton:
-                    self.show_context_menu(app_name, event.globalPos())
-                else:
-                    NetworkToolCard.mousePressEvent(app_card, event)
-            
-            app_card.mousePressEvent = mouse_press_event
-            
-            self.apps_layout.addWidget(app_card, row, col, Qt.AlignTop)
-            self.app_buttons[app_name] = app_card
+            app_button = self.create_app_button(app_name, app_info)
+            self.apps_layout.addWidget(app_button, row, col, Qt.AlignTop)
+            self.app_buttons[app_name] = app_button
             
         # Set column stretch to make columns equal width
         for col in range(self.grid_columns):
             self.apps_layout.setColumnStretch(col, 1)
             
-        # Add stretch at the bottom to push cards to top
+        # Add stretch at the bottom to push buttons to top
         self.apps_layout.setRowStretch(apps_per_column, 1)
+                
+    def create_app_button(self, app_name, app_info):
+        """Create a button for an app"""
+        button = QPushButton()
+        
+        # Get button size - making them more compact for vertical layout
+        size_map = {
+            "Small": (200, 60),
+            "Medium": (240, 70),
+            "Large": (280, 80)
+        }
+        width, height = size_map.get(self.button_size, (240, 70))
+        button.setFixedSize(width, height)
+        
+        # Get display name (custom name if set)
+        display_name = self.settings.get('custom_names', {}).get(app_name, app_info['name'])
+        display_name = display_name.replace('_', ' ').title()
+        
+        # Get theme colors
+        theme = self.themes[self.current_theme]
+        
+        # Create button styling - more compact for list view
+        button_style = f"""
+            QPushButton {{
+                background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                    stop: 0 {theme['button_bg']}, stop: 1 {theme['content_bg']});
+                border: 2px solid {theme['button_border']};
+                border-radius: 8px;
+                font-size: 12px;
+                font-weight: bold;
+                color: {theme['text_color']};
+                text-align: left;
+                padding: 8px 12px;
+            }}
+            QPushButton:hover {{
+                background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                    stop: 0 {theme['button_hover']}, stop: 1 {theme['button_bg']});
+                border-color: {theme['title_color']};
+                color: {theme['title_color']};
+            }}
+            QPushButton:pressed {{
+                background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                    stop: 0 {theme['button_pressed']}, stop: 1 {theme['button_hover']});
+                border-color: {theme['title_color']};
+            }}
+        """
+        button.setStyleSheet(button_style)
+        
+        # Create button content - more compact layout
+        icon_text = "📱" if app_info['requirements'].exists() else "🚀"
+        
+        # Add source indicator for external apps
+        source_indicator = " 🔗" if app_info['source'] == "external" else ""
+        
+        # Left-aligned, single line layout
+        status_info = "📦" if app_info['requirements'].exists() else "✨"
+        readme_info = " 📖" if app_info['readme'].exists() else ""
+        
+        button_text = f"{icon_text} {display_name}{source_indicator}    {status_info}{readme_info}"
+            
+        button.setText(button_text)
+        
+        # Connect left click to launch app
+        button.clicked.connect(lambda checked, name=app_name: self.launch_app(name))
+        
+        # Set up right-click context menu using mousePressEvent
+        def mouse_press_event(event):
+            if event.button() == Qt.RightButton:
+                print(f"Right click detected on {app_name}")  # Debug
+                self.show_context_menu(app_name, event.globalPos())
+            else:
+                QPushButton.mousePressEvent(button, event)
+        
+        button.mousePressEvent = mouse_press_event
+        
+        # Add tooltip for user guidance
+        button.setToolTip(f"Left click: Launch {display_name}\nRight click: View menu options")
+        
+        return button
 
     def show_context_menu(self, app_name, position):
-        """Show enhanced context menu for network tools"""
+        """Show context menu for app buttons"""
+        print(f"Context menu requested for: {app_name} at position: {position}")  # Debug
+        
         if app_name not in self.discovered_apps:
+            print(f"App {app_name} not found in discovered apps")  # Debug
             return
             
         app_info = self.discovered_apps[app_name]
+        print(f"Showing context menu for: {app_info['name']}")  # Debug
+        
+        # Get theme colors for menu styling
         theme = self.themes[self.current_theme]
         
-        # Create enhanced context menu
+        # Create context menu
         menu = QMenu(self)
         menu.setStyleSheet(f"""
             QMenu {{
-                background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                    stop: 0 {theme['content_bg']}, stop: 1 {theme['button_bg']});
-                border: 2px solid {theme['accent_color']};
-                border-radius: 8px;
-                padding: 8px;
+                background-color: {theme['content_bg']};
+                border: 1px solid {theme['border_color']};
+                border-radius: 5px;
+                padding: 5px;
                 color: {theme['text_color']};
             }}
             QMenu::item {{
-                padding: 10px 20px;
-                border-radius: 6px;
+                padding: 8px 20px;
+                border-radius: 3px;
                 background-color: transparent;
-                font-weight: bold;
             }}
             QMenu::item:selected {{
-                background-color: {theme['accent_color']};
-                color: white;
+                background-color: {theme['button_hover']};
+                color: {theme['title_color']};
             }}
         """)
         
-        # Add enhanced menu actions
-        readme_action = QAction("📖 View Documentation", self)
+        # Add "View README" action
+        readme_action = QAction("📖 View README", self)
         readme_action.triggered.connect(lambda: self.show_readme(app_name))
         menu.addAction(readme_action)
         
-        folder_action = QAction("📁 Open Tool Folder", self)
+        # Add "Open Folder" action
+        folder_action = QAction("📁 Open Folder", self)
         folder_action.triggered.connect(lambda: self.open_app_folder(app_name))
         menu.addAction(folder_action)
         
-        menu.addSeparator()
+        # Add a test action to verify menu works
+        test_action = QAction("🔧 Test Action", self)
+        test_action.triggered.connect(lambda: print(f"Test action clicked for {app_name}"))
+        menu.addAction(test_action)
         
-        info_action = QAction("ℹ️ Tool Information", self)
-        info_action.triggered.connect(lambda: self.show_tool_info(app_name))
-        menu.addAction(info_action)
-        
+        print("About to show context menu...")  # Debug
+        # Show the menu
         menu.exec_(position)
     
-    def show_tool_info(self, app_name):
-        """Show detailed tool information"""
-        if app_name not in self.discovered_apps:
-            return
-            
-        app_info = self.discovered_apps[app_name]
-        display_name = self.settings.get('custom_names', {}).get(app_name, app_info['name'])
-        
-        info_text = f"""
-        <h3>🔧 {display_name}</h3>
-        <p><b>Type:</b> {'External Tool' if app_info['source'] == 'external' else 'Local Tool'}</p>
-        <p><b>Path:</b> {app_info['path']}</p>
-        <p><b>Dependencies:</b> {'Yes' if app_info['requirements'].exists() else 'No'}</p>
-        <p><b>Documentation:</b> {'Available' if app_info['readme'].exists() else 'Not available'}</p>
-        """
-        
-        QMessageBox.information(self, f"Tool Information - {display_name}", info_text)
-    
     def show_readme(self, app_name):
-        """Show README dialog for a tool"""
+        """Show README dialog for an app"""
         if app_name not in self.discovered_apps:
             return
             
@@ -1132,7 +942,7 @@ class AppLauncher(QMainWindow):
         dialog.exec_()
     
     def open_app_folder(self, app_name):
-        """Open the tool folder in file explorer"""
+        """Open the app folder in file explorer"""
         if app_name not in self.discovered_apps:
             return
             
@@ -1169,7 +979,7 @@ class AppLauncher(QMainWindow):
             print(f"Error saving settings: {e}")
     
     def open_settings(self):
-        """Open enhanced settings dialog"""
+        """Open settings dialog"""
         dialog = SettingsDialog(self)
         if dialog.exec_() == QDialog.Accepted:
             new_settings = dialog.get_settings()
@@ -1188,7 +998,7 @@ class AppLauncher(QMainWindow):
             # Apply theme if changed
             if old_theme != self.current_theme:
                 self.apply_theme()
-                # Update all existing cards with new theme
+                # Update all existing buttons with new theme
                 self.update_ui()
             elif old_columns != self.grid_columns or old_button_size != self.button_size:
                 # Only update UI if layout changed
@@ -1196,19 +1006,18 @@ class AppLauncher(QMainWindow):
             
             self.save_settings()
             self.refresh_apps()  # Refresh to include external paths
-            self.status_label.setText("⚙️ Settings updated successfully")
+            self.status_label.setText("Settings updated")
         else:
-            # If dialog was cancelled, restore the original theme
+            # If dialog was cancelled, make sure we restore the original theme
             self.apply_theme()
             
     def launch_app(self, app_name):
-        """Launch a network tool with enhanced feedback"""
+        """Launch a Python application"""
         if app_name not in self.discovered_apps:
-            QMessageBox.warning(self, "Error", f"Network tool '{app_name}' not found")
+            QMessageBox.warning(self, "Error", f"App '{app_name}' not found")
             return
             
         app_info = self.discovered_apps[app_name]
-        display_name = self.settings.get('custom_names', {}).get(app_name, app_info['name'])
         
         try:
             # Check if requirements need to be installed
@@ -1216,38 +1025,38 @@ class AppLauncher(QMainWindow):
                 needs_install, reason = self.check_requirements_needed(app_info)
                 
                 if needs_install:
-                    self.status_label.setText(f"📦 Installing dependencies for {display_name}... ({reason})")
+                    self.status_label.setText(f"Installing requirements for {app_name}... ({reason})")
                     QApplication.processEvents()  # Update UI
                     
                     success, message = self.install_requirements(app_info)
                     if not success:
-                        QMessageBox.warning(self, "Dependency Error", 
-                                          f"Failed to install dependencies for {display_name}:\n{message}")
-                        self.status_label.setText("❌ Dependency installation failed")
+                        QMessageBox.warning(self, "Requirements Error", 
+                                          f"Failed to install requirements:\n{message}")
+                        self.status_label.setText("Requirements installation failed")
                         return
                     else:
-                        self.status_label.setText(message)
+                        self.status_label.setText(f"Requirements updated: {message}")
                 else:
-                    self.status_label.setText(f"✅ Dependencies OK: {reason}")
+                    self.status_label.setText(f"Requirements OK: {reason}")
                     
-            # Launch the tool
-            self.status_label.setText(f"🚀 Launching {display_name}...")
+            # Launch the app
+            self.status_label.setText(f"Launching {app_name}...")
             QApplication.processEvents()
             
             subprocess.Popen([
                 sys.executable, "main.py"
             ], cwd=str(app_info['path']))
             
-            self.status_label.setText(f"✅ {display_name} launched successfully")
+            self.status_label.setText(f"Launched {app_name}")
             
         except Exception as e:
             QMessageBox.critical(self, "Launch Error", 
-                               f"Failed to launch {display_name}:\n{str(e)}")
-            self.status_label.setText(f"❌ Error launching {display_name}")
+                               f"Failed to launch {app_name}:\n{str(e)}")
+            self.status_label.setText("Error launching app")
             
     def refresh_apps(self):
-        """Refresh the network tools list"""
-        self.status_label.setText("🔄 Refreshing network tools...")
+        """Refresh the apps list"""
+        self.status_label.setText("Refreshing apps...")
         QApplication.processEvents()
         
         # Small delay to ensure file operations are complete
@@ -1256,12 +1065,6 @@ class AppLauncher(QMainWindow):
 
 def main():
     app = QApplication(sys.argv)
-    
-    # Set application properties
-    app.setApplicationName("Sigma's Network Toolkit Launcher")
-    app.setApplicationVersion("2.0")
-    app.setOrganizationName("Sigma Tools")
-    
     launcher = AppLauncher()
     launcher.show()
     sys.exit(app.exec_())
