@@ -347,20 +347,23 @@ class AppLauncher(QMainWindow):
         self.current_theme = "Light"
         self.settings = {}
         
-        # Theme definitions - Updated with light grey colors
+        # Theme definitions - Updated with enhanced light grey colors and gradients
         self.themes = {
             "Light": {
-                "main_bg": "#f0f0f0",        # Changed from "#f5f5f5" to light grey
-                "content_bg": "#e8e8e8",     # Changed from "#ffffff" to light grey
-                "text_color": "#333333",
-                "title_color": "#2c3e50",
-                "border_color": "#cccccc",   # Slightly darker border for contrast
-                "button_bg": "#e8e8e8",      # Changed from "#ffffff" to light grey
-                "button_hover": "#d8d8d8",   # Changed from "#f0f8ff" to darker grey
-                "button_pressed": "#c8c8c8", # Changed from "#e6f3ff" to darker grey
-                "button_border": "#bbbbbb",  # Changed from "#e9ecef" to darker grey
-                "status_bg": "#d0d0d0",      # Changed from "#ecf0f1" to grey
-                "status_text": "#555555"     # Changed from "#7f8c8d" to darker text
+                "main_bg": "#f2f2f2",        # Slightly warmer grey
+                "content_bg": "#e6e6e6",     # Enhanced content background
+                "text_color": "#2c2c2c",     # Slightly darker text for better contrast
+                "title_color": "#1a5490",    # Professional blue for titles
+                "border_color": "#c0c0c0",   # Enhanced border color
+                "button_bg": "#e6e6e6",      # Button background
+                "button_hover": "#d0d0d0",   # More pronounced hover effect
+                "button_pressed": "#c0c0c0", # Enhanced pressed state
+                "button_border": "#b0b0b0",  # Defined button borders
+                "status_bg": "#d8d8d8",      # Status bar background
+                "status_text": "#4a4a4a",    # Status text color
+                "accent_color": "#3498db",   # New accent color for highlights
+                "success_color": "#27ae60",  # Success/ready indicators
+                "warning_color": "#f39c12"   # Warning/dependency indicators
             },
             "Dark": {
                 "main_bg": "#2b2b2b",
@@ -373,7 +376,10 @@ class AppLauncher(QMainWindow):
                 "button_pressed": "#555555",
                 "button_border": "#606060",
                 "status_bg": "#484848",
-                "status_text": "#cccccc"
+                "status_text": "#cccccc",
+                "accent_color": "#3498db",
+                "success_color": "#27ae60",
+                "warning_color": "#f39c12"
             }
         }
         
@@ -394,7 +400,7 @@ class AppLauncher(QMainWindow):
         
     def init_ui(self):
         """Initialize the user interface"""
-        self.setWindowTitle("Sigma's Toolkit Launcher")
+        self.setWindowTitle("Sigma's Sysadmin Toolkit")
         self.setGeometry(100, 100, 1000, 700)
         
         # Central widget
@@ -406,10 +412,10 @@ class AppLauncher(QMainWindow):
         main_layout.setSpacing(15)
         main_layout.setContentsMargins(20, 20, 20, 20)
         
-        # Header
+        # Header with enhanced styling
         header_layout = QHBoxLayout()
-        self.title_label = QLabel("🔧 Sigma's Toolkit Launcher")
-        self.title_label.setFont(QFont("Arial", 18, QFont.Bold))
+        self.title_label = QLabel("⚡ Sigma's Sysadmin Toolkit")
+        self.title_label.setFont(QFont("Segoe UI", 20, QFont.Bold))
         header_layout.addWidget(self.title_label)
         
         header_layout.addStretch()
@@ -454,7 +460,7 @@ class AppLauncher(QMainWindow):
         """Apply the current theme to the interface"""
         theme = self.themes[self.current_theme]
         
-        # Main window styling - more comprehensive
+        # Scroll area styling with enhanced effects
         self.setStyleSheet(f"""
             QMainWindow {{
                 background-color: {theme['main_bg']};
@@ -470,8 +476,9 @@ class AppLauncher(QMainWindow):
             }}
             QScrollArea {{
                 background-color: {theme['content_bg']};
-                border: 1px solid {theme['border_color']};
-                border-radius: 8px;
+                border: 2px solid {theme['border_color']};
+                border-radius: 12px;
+                padding: 5px;
             }}
             QScrollArea > QWidget > QWidget {{
                 background-color: {theme['content_bg']};
@@ -479,16 +486,20 @@ class AppLauncher(QMainWindow):
             QScrollBar:vertical {{
                 background-color: {theme['content_bg']};
                 border: 1px solid {theme['border_color']};
-                border-radius: 4px;
-                width: 12px;
+                border-radius: 6px;
+                width: 14px;
+                margin: 2px;
             }}
             QScrollBar::handle:vertical {{
-                background-color: {theme['button_bg']};
-                border-radius: 4px;
-                min-height: 20px;
+                background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0,
+                    stop: 0 {theme['button_bg']}, stop: 1 {theme['button_hover']});
+                border-radius: 5px;
+                min-height: 25px;
+                margin: 2px;
             }}
             QScrollBar::handle:vertical:hover {{
-                background-color: {theme['button_hover']};
+                background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0,
+                    stop: 0 {theme['button_hover']}, stop: 1 {theme['button_pressed']});
             }}
             QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
                 border: none;
@@ -496,34 +507,40 @@ class AppLauncher(QMainWindow):
             }}
         """)
         
-        # Title styling
+        # Title styling with enhanced effects (PyQt5 compatible)
         self.title_label.setStyleSheet(f"""
             QLabel {{
                 color: {theme['title_color']}; 
-                margin-bottom: 10px;
+                margin-bottom: 15px;
                 background-color: transparent;
                 font-weight: bold;
+                padding: 10px;
             }}
         """)
         
-        # Header button styling
+        # Header button styling with enhanced effects (PyQt5 compatible)
         header_button_style = f"""
             QPushButton {{
-                background-color: {theme['button_bg']};
+                background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                    stop: 0 {theme['button_bg']}, stop: 1 {theme['content_bg']});
                 color: {theme['text_color']};
-                border: 1px solid {theme['button_border']};
-                border-radius: 6px;
-                padding: 10px 20px;
+                border: 2px solid {theme['button_border']};
+                border-radius: 8px;
+                padding: 12px 24px;
                 font-size: 12px;
                 font-weight: bold;
+                min-width: 80px;
             }}
             QPushButton:hover {{
-                background-color: {theme['button_hover']};
-                border-color: {theme['title_color']};
-                color: {theme['title_color']};
+                background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                    stop: 0 {theme['button_hover']}, stop: 1 {theme['button_bg']});
+                border-color: {theme['accent_color']};
+                color: {theme['accent_color']};
             }}
             QPushButton:pressed {{
-                background-color: {theme['button_pressed']};
+                background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                    stop: 0 {theme['button_pressed']}, stop: 1 {theme['button_hover']});
+                border-color: {theme['title_color']};
             }}
         """
         
@@ -538,14 +555,17 @@ class AppLauncher(QMainWindow):
             }}
         """)
         
-        # Status label styling
+        # Status label styling with enhanced effects
         self.status_label.setStyleSheet(f"""
             QLabel {{
-                background-color: {theme['status_bg']};
-                padding: 8px;
-                border-radius: 4px;
+                background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                    stop: 0 {theme['status_bg']}, stop: 1 {theme['content_bg']});
+                padding: 12px 16px;
+                border-radius: 8px;
                 color: {theme['status_text']};
-                border: 1px solid {theme['border_color']};
+                border: 2px solid {theme['border_color']};
+                font-weight: 500;
+                font-size: 11px;
             }}
         """)
         
@@ -816,24 +836,24 @@ class AppLauncher(QMainWindow):
         # Get theme colors
         theme = self.themes[self.current_theme]
         
-        # Create button styling - more compact for list view
+        # Create button styling - enhanced with PyQt5 compatible effects
         button_style = f"""
             QPushButton {{
                 background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
                     stop: 0 {theme['button_bg']}, stop: 1 {theme['content_bg']});
                 border: 2px solid {theme['button_border']};
-                border-radius: 8px;
+                border-radius: 10px;
                 font-size: 12px;
                 font-weight: bold;
                 color: {theme['text_color']};
                 text-align: left;
-                padding: 8px 12px;
+                padding: 10px 15px;
             }}
             QPushButton:hover {{
                 background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
                     stop: 0 {theme['button_hover']}, stop: 1 {theme['button_bg']});
-                border-color: {theme['title_color']};
-                color: {theme['title_color']};
+                border-color: {theme['accent_color']};
+                color: {theme['accent_color']};
             }}
             QPushButton:pressed {{
                 background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
@@ -843,15 +863,19 @@ class AppLauncher(QMainWindow):
         """
         button.setStyleSheet(button_style)
         
-        # Create button content - more compact layout
-        icon_text = "📱" if app_info['requirements'].exists() else "🚀"
+        # Create button content with enhanced icons
+        if app_info['requirements'].exists():
+            icon_text = "🔧"  # Tool icon for apps with requirements
+            status_info = "📦"
+        else:
+            icon_text = "⚡"  # Lightning for ready-to-run apps
+            status_info = "✅"
         
         # Add source indicator for external apps
         source_indicator = " 🔗" if app_info['source'] == "external" else ""
         
-        # Left-aligned, single line layout
-        status_info = "📦" if app_info['requirements'].exists() else "✨"
-        readme_info = " 📖" if app_info['readme'].exists() else ""
+        # Enhanced status indicators
+        readme_info = " 📚" if app_info['readme'].exists() else ""
         
         button_text = f"{icon_text} {display_name}{source_indicator}    {status_info}{readme_info}"
             
