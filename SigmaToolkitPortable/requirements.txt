@@ -1,0 +1,17 @@
+# Sigma's Toolkit Launcher - Requirements
+# GUI Framework - Use version with good Windows wheel support
+PyQt5==5.15.9
+
+# Metadata handling for Python < 3.8 compatibility
+importlib-metadata>=4.0.0; python_version < "3.8"
+
+# Note: PyQt5-Qt5 and PyQt5-sip will be installed automatically
+# with compatible versions when installing PyQt5==5.15.9
+
+# Standard library modules (included with Python)
+# - json (built-in)
+# - hashlib (built-in) 
+# - subprocess (built-in)
+# - pathlib (built-in)
+# - sys (built-in)
+# - os (built-in)
