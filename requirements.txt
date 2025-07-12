@@ -1,6 +1,6 @@
 # Sigma's Toolkit Launcher - Requirements
 # GUI Framework - Use version with good Windows wheel support
-PyQt5==5.15.9
+PyQt5==5.15.10
 
 # Metadata handling for Python < 3.8 compatibility
 importlib-metadata>=4.0.0; python_version < "3.8"
